@@ -1,3 +1,3 @@
 # An Introduction to R
 
-Please see [tools-not-taught.github.io](https://tools-not-taught.github.io) for information.
+Please see [tools-not-taught.github.io](https://tools-not-taught.github.io/#r) for information.
