@@ -1,22 +1,3 @@
----
-title:  "An Introduction to R"
-author: "jessekelighine@gmail.com"
-date:   "2023-06-18"
----
+# An Introduction to R
 
-- [Advanced R](https://adv-r.hadley.nz/)
-
-# Base R
-
-## Other Topics
-
-- date manipulation
-- string manipulation
-- `apply` family
-- 
-
-# tidyverse
-
-# ggplot
-
-# Example: MCMC 
+Please see [tools-not-taught.github.io](https://tools-not-taught.github.io) for information.
