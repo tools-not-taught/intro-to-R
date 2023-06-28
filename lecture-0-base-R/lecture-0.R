@@ -11,7 +11,11 @@
 ### Getting Started ###########################################################
 
 # This file is a R script file. R script files has extension `.R` or `.r`.
-#
+# Before we start, make sure you are in the correct directory.
+
+getwd()
+setwd("path/to/lecture-0")
+
 # The R language uses `<-` or `->` to assign variables.
 
 2 -> something
