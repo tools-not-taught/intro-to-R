@@ -38,8 +38,8 @@
 #    One task that is not easily achievable simply operating row-wise or
 #    column-wise is reshaping wide and long forms of data (explained later).
 #    There are two functions related to this:
-#      - gather()          wide form to long form
-#      - spread()          long form to wide form
+#      - pivot_wider()     wide form to long form
+#      - pivot_longer()    long form to wide form
 #
 # 3. JOINING DATA:
 #    When manipulating data, one often needs to combine two or more data.frames
@@ -60,7 +60,10 @@
 install.packages("tidyverse")
 library(tidyverse)
 
-data.path <- function ( file ) { paste0("./data/",file) }
+# This function makes reading data from the `data/` directory easier.
+data_path <- function(file) {
+  paste0("./data/", file)
+}
 
 ### DPLYR VERBS ###############################################################
 
@@ -70,33 +73,37 @@ data.path <- function ( file ) { paste0("./data/",file) }
 # underscores rather than dots. This is a way you can tell these functions
 # apart from functions provided by base R.
 
-open.data <- read_csv(data.path("opendata-107.csv"))
-colnames(open.data)
-names(open.data)
+open_data <- data_path("opendata-107.csv") |> read_csv()
+colnames(open_data)
+names(open_data)
 
 ## VERB: slice()
 
-open.data %>% slice(1:5)
-open.data %>% slice(-1) -> open.data
+open_data |> slice(1:5)
+open_data <- open_data |> slice(-1)
 
 ## VERB: select()
 
 # Often we do not need all the columns in the data, `select()` helps us
 # "select" the ones we want. You can also change the column name with select.
 
-open.data %>%
-  select(statistic_yyy,
-         site_id,
-         village,
-         single_age_20_24_m,
-         single_age_20_24_f) -> open.data.20.24
+open_data_20_24 <- open_data |>
+  select(
+    statistic_yyy,
+    site_id,
+    village,
+    single_age_20_24_m,
+    single_age_20_24_f
+  )
 
-open.data %>%
-  select(A = statistic_yyy,
-         B = site_id,
-         C = village,
-         D = single_age_20_24_m,
-         E = single_age_20_24_f)
+open_data |>
+  select(
+    A = statistic_yyy,
+    B = site_id,
+    C = village,
+    D = single_age_20_24_m,
+    E = single_age_20_24_f
+  )
 
 ## VERB: mutate()
 
@@ -109,41 +116,46 @@ open.data %>%
 # `stringr`, which is included in `tidyverse`. In the homework, you will learn
 # more about `stringr`.
 
-open.data.20.24 <- open.data.20.24 %>%
-  mutate(statistic_yyy      = as.integer(statistic_yyy),
-         single_age_20_24_m = as.integer(single_age_20_24_m),
-         single_age_20_24_f = as.integer(single_age_20_24_f))
+open_data_20_24 <- open_data_20_24 |>
+  mutate(
+    statistic_yyy = as.integer(statistic_yyy),
+    single_age_20_24_m = as.integer(single_age_20_24_m),
+    single_age_20_24_f = as.integer(single_age_20_24_f)
+  )
 
-open.data.20.24 %>%
-  mutate(statistic_yyyy = statistic_yyy + 1911) -> open.data.20.24
+open_data_20_24 <- open_data_20_24 |>
+  mutate(statistic_yyyy = statistic_yyy + 1911)
 
-open.data.20.24 %>% mutate(balance = single_age_20_24_f == single_age_20_24_m)
-open.data.20.24 %>% mutate(county = str_sub(site_id,1,3))
+open_data_20_24 |> mutate(balanced = single_age_20_24_f == single_age_20_24_m)
+open_data_20_24 |> mutate(county = str_sub(site_id, 1, 3))
 
 ## VERB: relocate()
 
-open.data.20.24 %>% relocate(statistic_yyyy, .before = statistic_yyy)
-open.data.20.24 %>% relocate(statistic_yyyy, .after  = statistic_yyy)
-open.data.20.24 %>% select(-statistic_yyy, -statistic_yyyy) -> open.data.20.24
+open_data_20_24 |> relocate(statistic_yyyy, .before = statistic_yyy)
+open_data_20_24 |> relocate(statistic_yyyy, .after = statistic_yyy)
+open_data_20_24 <- open_data_20_24 |>
+  select(-statistic_yyy, -statistic_yyyy)
 
 ## VERB: rename()
 
-open.data.20.24 %>%
-  rename(single_m_20_24_m = single_age_20_24_m,
-         single_f_20_24_f = single_age_20_24_f)
+open_data_20_24 |>
+  rename(
+    single_m_20_24_m = single_age_20_24_m,
+    single_f_20_24_f = single_age_20_24_f
+  )
 
 ## VERB: filter()
 
 # This verb "filters" the row by some criterion. Any expression that returns
 # a logical type can serve as a criterion.
 
-open.data.20.24 %>% filter(site_id=="臺北市大安區")
-open.data.20.24 %>% filter(single_age_20_24_m >= 500)
+open_data_20_24 |> filter(site_id == "臺北市大安區")
+open_data_20_24 |> filter(single_age_20_24_m >= 500)
 
 ## VERB: arrange()
 
-open.data.20.24 %>%
-  filter(single_age_20_24_m >= 500) %>%
+open_data_20_24 |>
+  filter(single_age_20_24_m >= 500) |>
   arrange(-single_age_20_24_m)
 
 ### RESHAPING DATA ############################################################
@@ -177,23 +189,34 @@ open.data.20.24 %>%
 # | D       | female | 9     |
 # | E       | female | 1     |
 
-open.data %>%
-  mutate(site_id = str_replace(site_id, "三民一", "三民區"),
-         site_id = str_replace(site_id, "三民二", "三民區"),
-         site_id = str_replace(site_id, "鳳山一", "鳳山區"),
-         site_id = str_replace(site_id, "鳳山二", "鳳山區")) %>%
-  mutate(site_id = str_replace(site_id, "東　區", "東區"),
-         site_id = str_replace(site_id, "西　區", "西區"),
-         site_id = str_replace(site_id, "南　區", "南區"),
-         site_id = str_replace(site_id, "中　區", "中區"),
-         site_id = str_replace(site_id, "北　區", "北區")) %>%
-  select(-statistic_yyy, -district_code) %>%
-  gather(key="type", value="number", 3:ncol(.)) %>%
-  mutate(number = as.integer(number)) -> open.data
+open_data <- open_data |>
+  mutate(
+    site_id = str_replace(site_id, "三民一", "三民區"),
+    site_id = str_replace(site_id, "三民二", "三民區"),
+    site_id = str_replace(site_id, "鳳山一", "鳳山區"),
+    site_id = str_replace(site_id, "鳳山二", "鳳山區")
+  ) |>
+  mutate(
+    site_id = str_replace(site_id, "東　區", "東區"),
+    site_id = str_replace(site_id, "西　區", "西區"),
+    site_id = str_replace(site_id, "南　區", "南區"),
+    site_id = str_replace(site_id, "中　區", "中區"),
+    site_id = str_replace(site_id, "北　區", "北區")
+  ) |>
+  select(-statistic_yyy, -district_code) |>
+  pivot_longer(
+    cols = matches("_[mf]$"),
+    names_to = "type",
+    values_to = "number"
+  ) |>
+  mutate(number = as.integer(number))
 
-open.data %>%
-  filter(site_id=="臺北市大安區") %>%
-  spread(key="type", value="number")
+open_data |>
+  filter(site_id == "臺北市大安區") |>
+  pivot_wider(
+    names_from = type,
+    values_from = number
+  )
 
 ### GROUP, UNGROUP, SUMMARIZE #################################################
 
@@ -203,16 +226,17 @@ open.data %>%
 # criteria. By grouping the data, we can calculate group level values easily.
 
 once_married_types <- c("married", "divorced", "widowed")
-open.data %>%
-  mutate(marital_status = str_split_i(type, "_", 1)) %>%
-  group_by(site_id, marital_status) %>%
-  summarize(number = sum(number)) %>%
-  ungroup() %>%
-  group_by(site_id) %>%
-  mutate(population   = sum(number),
-         once_married = sum(number[marital_status %in% once_married_types]),
-         once_married_percentage = once_married / population) %>%
-  ungroup() -> open.data
+open_data <- open_data |>
+  mutate(marital_status = str_split_i(type, "_", 1)) |>
+  group_by(site_id, marital_status) |>
+  summarize(number = sum(number), .groups = "drop") |>
+  group_by(site_id) |>
+  mutate(
+    population = sum(number),
+    once_married = sum(number[marital_status %in% once_married_types]),
+    once_married_percentage = once_married / population
+  ) |>
+  ungroup()
 
 ### JOINING DATA ##############################################################
 
@@ -226,7 +250,7 @@ open.data %>%
 #
 # or
 #
-#     X %>% something_join(Y, by = column)
+#     X |> something_join(Y, by = column)
 #
 # where `X` and `Y` are data frames. The data frame `X` is called the "left
 # data frame" and `Y` is called the "right data frame". The four different
@@ -241,100 +265,114 @@ open.data %>%
 # unexpected results if the column by which you join contains non-unique
 # values entries.
 
-read_csv(data.path("referendum-2018-number-10.csv")) %>%
-  select(county           = 縣市,
-         town             = 鄉鎮市區,
-         agree            = 同意票數,
-         disagree         = 不同意票數,
-         legal_vote       = 有效票數,
-         illegal_vote     = 無效票數,
-         legal_population = 投票權人數,
-         vote             = 投票數) %>%
-  filter(!is.na(town)) %>%
-  mutate(site_id = paste0(county, town)) %>%
-  relocate(site_id, .before=county) %>%
-  select(-county, -town) -> referendum.data
+referendum_data <- data_path("referendum-2018-number-10.csv") |>
+  read_csv() |>
+  select(
+    county = 縣市,
+    town = 鄉鎮市區,
+    agree = 同意票數,
+    disagree = 不同意票數,
+    legal_vote = 有效票數,
+    illegal_vote = 無效票數,
+    legal_population = 投票權人數,
+    vote = 投票數
+  ) |>
+  filter(!is.na(town)) |>
+  mutate(site_id = paste0(county, town)) |>
+  relocate(site_id, .before = county) |>
+  select(-county, -town)
 
-open.data.temp <- open.data %>%
-  filter(site_id=="臺北市大安區" | site_id=="臺北市文山區") %>%
+open_data_temp <- open_data |>
+  filter(site_id == "臺北市大安區" | site_id == "臺北市文山區") |>
   mutate(site_id = str_replace(site_id, "文山區", "？？區"))
 
-referendum.data %>% left_join (open.data.temp, by="site_id")
-referendum.data %>% right_join(open.data.temp, by="site_id")
-referendum.data %>% inner_join(open.data.temp, by="site_id")
-referendum.data %>% full_join (open.data.temp, by="site_id")
+referendum_data |> left_join(open_data_temp, by = "site_id")
+referendum_data |> right_join(open_data_temp, by = "site_id")
+referendum_data |> inner_join(open_data_temp, by = "site_id")
+referendum_data |> full_join(open_data_temp, by = "site_id")
 
-referendum.data %>%
-  left_join(open.data, by="site_id") %>%
-  mutate(agree_percentage = agree / legal_vote) %>%
-  spread(marital_status, number) %>%
-  select(site_id,
-         once_married_percentage,
-         agree_percentage,
-         agree,
-         legal_vote,
-         legal_population,
-         population) -> referendum.data
+referendum_data <- referendum_data |>
+  left_join(
+    open_data |>
+      select(site_id, once_married_percentage, population) |>
+      distinct(),
+    by = "site_id"
+  ) |>
+  mutate(agree_percentage = agree / legal_vote) |>
+  select(
+    site_id,
+    once_married_percentage,
+    agree_percentage,
+    agree,
+    legal_vote,
+    legal_population,
+    population
+  )
 
 ### Results ###################################################################
 
-with(referendum.data,  cor(agree_percentage, once_married_percentage))
-with(referendum.data, plot(agree_percentage, once_married_percentage))
+with(referendum_data, cor(agree_percentage, once_married_percentage))
+with(referendum_data, plot(agree_percentage, once_married_percentage))
 
-referendum.data %>%
+referendum_data |>
   filter(agree_percentage < 0.67)
 
-referendum.data %>%
-  filter(once_married_percentage <= 0.55) %>%
-  filter(agree_percentage >= 0.77) %>%
+referendum_data |>
+  filter(once_married_percentage <= 0.55) |>
+  filter(agree_percentage >= 0.77) |>
   arrange(site_id)
 
 ### Plot Results ##############################################################
 
 # Better plots using `ggplot`, next lecture :)
 
-indigenous_sites <- read_csv(data.path("indigenous-sites.csv"))$site_id
-municipalities   <- c("臺北市","新北市","桃園市","臺中市","臺南市","高雄市")
-county_types     <- c(municipalities, "其他")
-chinese_font     <- "Noto Sans CJK KR"
+indigenous_sites <- read_csv(data_path("indigenous-sites.csv"))$site_id
+municipalities <- c("臺北市", "新北市", "桃園市", "臺中市", "臺南市", "高雄市")
+county_types <- c(municipalities, "其他")
+chinese_font <- "jf-openhuninn-2.0"
 
-referendum.data %>%
-  mutate(county       = str_extract(site_id, "^...")) %>%
-  mutate(indigenous   = site_id %in% indigenous_sites) %>%
-  mutate(indigenous   = if_else(indigenous, "是", "否")) %>%
-  mutate(indigenous   = factor(indigenous, levels=c("是", "否"))) %>%
-  mutate(municipality = county  %in% municipalities) %>%
-  mutate(municipality = if_else(municipality, county, "其他")) %>%
-  mutate(municipality = factor(municipality, levels=county_types)) %>%
-  select(site_id,
-         agree_percentage,
-         once_married_percentage,
-         municipality,
-         indigenous) %>%
-  ggplot()+
-  aes(x     = agree_percentage,
-      y     = once_married_percentage,
-      color = municipality,
-      shape = indigenous,
-      label = site_id)+
-  geom_point(alpha=0.9, size=2)+
-  geom_text(family = chinese_font,
-            color  = "black",
-            size   = 0.8,
-            alpha  = 0.1)+
-  theme(text = element_text(size=12, family=chinese_font))+
-  scale_color_brewer(palette="Spectral")+
-  scale_shape_manual(values=c("是"=1, "否"=19))+
-  labs(x     = "同意比例",
-       y     = "結婚比例",
-       color = "直轄市",
-       shape = "原住民鄉鎮市區",
-       title = "2018 公投：第 10 案「同意比例」對「結婚比例」") -> output
+output <- referendum_data |>
+  mutate(county = str_extract(site_id, "^...")) |>
+  mutate(indigenous = site_id %in% indigenous_sites) |>
+  mutate(indigenous = if_else(indigenous, "是", "否")) |>
+  mutate(indigenous = factor(indigenous, levels = c("是", "否"))) |>
+  mutate(municipality = county %in% municipalities) |>
+  mutate(municipality = if_else(municipality, county, "其他")) |>
+  mutate(municipality = factor(municipality, levels = county_types)) |>
+  select(
+    site_id,
+    agree_percentage,
+    once_married_percentage,
+    municipality,
+    indigenous
+  ) |>
+  ggplot() +
+  aes(
+    x = agree_percentage,
+    y = once_married_percentage,
+    color = municipality,
+    shape = indigenous,
+    label = site_id
+  ) +
+  geom_point(alpha = 0.9, size = 2) +
+  geom_text(family = chinese_font, color = "black", size = 0.8, alpha = 0.1) +
+  theme(text = element_text(size = 12, family = chinese_font)) +
+  scale_color_brewer(palette = "Spectral") +
+  scale_shape_manual(values = c("是" = 1, "否" = 19)) +
+  labs(
+    x = "同意比例",
+    y = "結婚比例",
+    color = "直轄市",
+    shape = "原住民鄉鎮市區",
+    title = "2018 公投第 10 案：「你是否同意民法婚姻規定應限定在一男一女的結合？」"
+  )
 output
 
-ggsave(filename = "output-plot.pdf",
-       plot     = output,
-       width    = 25,
-       height   = 20,
-       unit     = "cm",
-       device   = cairo_pdf)
+ggsave(
+  filename = "output-plot.pdf",
+  plot = output,
+  width = 25,
+  height = 20,
+  unit = "cm",
+  device = cairo_pdf
+)

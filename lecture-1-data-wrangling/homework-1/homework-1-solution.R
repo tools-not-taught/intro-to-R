@@ -10,7 +10,9 @@
 library(tidyverse)
 ###############################################################################
 
-data.path <- function ( file ) { paste0("../data/",file) }
+data_path <- function(file) {
+  paste0("../data/", file)
+}
 
 # String parsing is a common task when cleaning data. In this homework
 # exercise, you will learn more about how to parse strings using the package
@@ -27,63 +29,71 @@ data.path <- function ( file ) { paste0("../data/",file) }
 # - str_detect:     detect whether the string contains a pattern
 # - str_extract:    extract some pattern from the string
 
-data.path("opendata-107.csv") %>% 
-  read_csv() %>%
-  slice(-1) %>%
-  select(-statistic_yyy, -district_code) %>%
-  gather(key="type", value="number", 3:ncol(.)) %>%
-  mutate(number = as.integer(number)) -> data
+data <- data_path("opendata-107.csv") |>
+  read_csv() |>
+  slice(-1) |>
+  select(-statistic_yyy, -district_code) |>
+  pivot_longer(
+    cols = matches("_[mf]$"),
+    names_to = "type",
+    values_to = "number"
+  ) |>
+  mutate(number = as.integer(number))
 
 ### str_sub ###################################################################
 
-data <- data %>%
-  mutate(county = str_sub(site_id, 1, 3)) %>%  # TODO: get `county` from `site_id`
+data <- data |>
+  mutate(county = str_sub(site_id, 1, 3)) |> # TODO: get `county` from `site_id`
   relocate(county)
 
 ### str_replace ###############################################################
 
-data <- data %>%
-  mutate(type = str_replace(type, "_age", "")) %>% # TODO: remove "_age" from `type`
-  mutate(type = str_replace(type, "15down", "0_15")) %>% # TODO: replace "15down" to "0_15" in `type`
+data <- data |>
+  mutate(type = str_replace(type, "_age", "")) |> # TODO: remove "_age" from `type`
+  mutate(type = str_replace(type, "15down", "0_15")) |> # TODO: replace "15down" to "0_15" in `type`
   mutate(type = str_replace(type, "100up", "100_110")) # TODO: replace "100up" to "100_110" in `type`
 
 ### str_split_i ###############################################################
 
-data <- data %>%
-  mutate(marital_status = str_split_i(type, "_", 1),     # TODO: get `marital_status` from `type`
-         age_lower      = str_split_i(type, "_", 2),     # TODO: get `age_lower` from `type`
-         age_upper      = str_split_i(type, "_", 3),     # TODO: get `age_upper` from `type`
-         sex            = str_split_i(type, "_", 4)) %>% # TODO: get `sex` from `type`
-  select(-type) %>%
-  mutate(age_lower = as.integer(age_lower),
-         age_upper = as.integer(age_upper)) %>% 
-  relocate(number, .after=sex)
+data <- data |>
+  mutate(
+    marital_status = str_split_i(type, "_", 1), # TODO: get `marital_status` from `type`
+    age_lower = str_split_i(type, "_", 2), # TODO: get `age_lower` from `type`
+    age_upper = str_split_i(type, "_", 3), # TODO: get `age_upper` from `type`
+    sex = str_split_i(type, "_", 4) # TODO: get `sex` from `type`
+  ) |>
+  select(-type) |>
+  mutate(
+    age_lower = as.integer(age_lower),
+    age_upper = as.integer(age_upper)
+  ) |>
+  relocate(number, .after = sex)
 
 ### str_detect ################################################################
 
-data <- data %>%
+data <- data |>
   mutate(municipality = str_detect(site_id, "市")) # TODO: get municipality
 
 ### str_extract ###############################################################
 
-data <- data %>% 
-  mutate(site_id = str_extract(site_id, "^...(.*)", group=1)) # TODO: use `str_extract` to remove country from `type`
+data <- data |>
+  mutate(site_id = str_extract(site_id, "^...(.*)", group = 1)) # TODO: use `str_extract` to remove country from `type`
 
-# After all the wangling, you should get something like this:
+# After all the data wrangling, you should get something like this:
 #
 # # A tibble: 1,179,520 × 9
 #    county site_id village marital_status age_lower age_upper sex   number municipality
-#    <chr>  <chr>   <chr>   <chr>              <int>     <int> <chr>  <int> <lgl>       
-#  1 新北市 板橋區  留侯里  single                 0        15 m        118 TRUE        
-#  2 新北市 板橋區  流芳里  single                 0        15 m        119 TRUE        
-#  3 新北市 板橋區  赤松里  single                 0        15 m         60 TRUE        
-#  4 新北市 板橋區  黃石里  single                 0        15 m        113 TRUE        
-#  5 新北市 板橋區  挹秀里  single                 0        15 m        123 TRUE        
-#  6 新北市 板橋區  湳興里  single                 0        15 m        351 TRUE        
-#  7 新北市 板橋區  新興里  single                 0        15 m        169 TRUE        
-#  8 新北市 板橋區  社後里  single                 0        15 m        318 TRUE        
-#  9 新北市 板橋區  香社里  single                 0        15 m        248 TRUE        
-# 10 新北市 板橋區  中正里  single                 0        15 m        313 TRUE        
+#    <chr>  <chr>   <chr>   <chr>              <int>     <int> <chr>  <int> <lgl>
+#  1 新北市 板橋區  留侯里  single                 0        15 m        118 TRUE
+#  2 新北市 板橋區  流芳里  single                 0        15 m        119 TRUE
+#  3 新北市 板橋區  赤松里  single                 0        15 m         60 TRUE
+#  4 新北市 板橋區  黃石里  single                 0        15 m        113 TRUE
+#  5 新北市 板橋區  挹秀里  single                 0        15 m        123 TRUE
+#  6 新北市 板橋區  湳興里  single                 0        15 m        351 TRUE
+#  7 新北市 板橋區  新興里  single                 0        15 m        169 TRUE
+#  8 新北市 板橋區  社後里  single                 0        15 m        318 TRUE
+#  9 新北市 板橋區  香社里  single                 0        15 m        248 TRUE
+# 10 新北市 板橋區  中正里  single                 0        15 m        313 TRUE
 
 ### MORE! #####################################################################
 
