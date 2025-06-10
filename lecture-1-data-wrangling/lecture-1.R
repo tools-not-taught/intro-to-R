@@ -362,7 +362,7 @@ output <- referendum_data |>
   labs(
     x = "同意比例",
     y = "結婚比例",
-    color = "直轄市",
+    color = "縣市",
     shape = "原住民鄉鎮市區",
     title = "2018 公投第 10 案：「你是否同意民法婚姻規定應限定在一男一女的結合？」"
   )
